@@ -39,7 +39,10 @@ fn agent_config_defaults_match_grouped_baseline() {
 
     assert_eq!(config.service.host, "127.0.0.1");
     assert_eq!(config.service.port, 17890);
-    assert!(config.security.allowed_origins.is_empty());
+    assert_eq!(
+        config.security.allowed_origins,
+        vec!["https://cellersistemas.com.br".to_string()]
+    );
     assert_eq!(config.security.allowed_ips, vec!["127.0.0.1".to_string()]);
     assert_eq!(config.printing.default_printer, None);
     assert_eq!(config.printing.default_paper, None);
@@ -48,8 +51,8 @@ fn agent_config_defaults_match_grouped_baseline() {
     assert_eq!(config.limits.max_batch_jobs, 20);
     assert_eq!(config.limits.max_copies, 100);
     assert_eq!(config.limits.download_timeout_seconds, 30);
-    assert!(!config.app.autostart);
-    assert_eq!(config.app.language, UiLanguage::ZhCn);
+    assert!(config.app.autostart);
+    assert_eq!(config.app.language, UiLanguage::En);
     assert!(!config.remote.enabled);
     assert_eq!(config.remote.endpoint_url, None);
     assert_eq!(config.remote.bearer_token, None);
@@ -130,7 +133,7 @@ fn agent_config_loads_legacy_json_without_remote_config() {
 
     assert_eq!(decoded.remote, RemoteConfig::default());
     assert_eq!(decoded.security.allowed_ips, vec!["127.0.0.1".to_string()]);
-    assert_eq!(decoded.app.language, UiLanguage::ZhCn);
+    assert_eq!(decoded.app.language, UiLanguage::En);
 }
 
 #[test]
@@ -159,7 +162,7 @@ fn agent_config_loads_legacy_json_without_allowed_ips() {
         vec!["https://example.com"]
     );
     assert_eq!(decoded.security.allowed_ips, vec!["127.0.0.1"]);
-    assert_eq!(decoded.app.language, UiLanguage::ZhCn);
+    assert_eq!(decoded.app.language, UiLanguage::En);
 }
 
 #[test]

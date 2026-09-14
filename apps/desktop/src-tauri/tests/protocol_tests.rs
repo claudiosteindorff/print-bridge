@@ -301,23 +301,42 @@ fn validates_raw_html_and_non_html_field_combinations() {
 }
 
 #[test]
-fn is_allowed_origin_requires_exact_origin_match() {
+fn is_allowed_origin_matches_exact_and_subdomains() {
     let allowed = vec![
         "http://localhost:5173".to_string(),
-        "https://app.example.com".to_string(),
+        "https://cellersistemas.com.br".to_string(),
     ];
 
     assert!(is_allowed_origin(Some("http://localhost:5173"), &allowed));
-    assert!(is_allowed_origin(Some("https://app.example.com"), &allowed));
+    assert!(is_allowed_origin(
+        Some("https://cellersistemas.com.br"),
+        &allowed
+    ));
+    assert!(is_allowed_origin(
+        Some("https://app.cellersistemas.com.br"),
+        &allowed
+    ));
+    assert!(is_allowed_origin(
+        Some("https://loja.admin.cellersistemas.com.br"),
+        &allowed
+    ));
 
     assert!(!is_allowed_origin(None, &allowed));
     assert!(!is_allowed_origin(Some("null"), &allowed));
     assert!(!is_allowed_origin(
-        Some("https://app.example.com/print"),
+        Some("http://app.cellersistemas.com.br"),
         &allowed
     ));
     assert!(!is_allowed_origin(
-        Some("https://APP.example.com"),
+        Some("https://evilcellersistemas.com.br"),
+        &allowed
+    ));
+    assert!(!is_allowed_origin(
+        Some("https://cellersistemas.com.br.evil.com"),
+        &allowed
+    ));
+    assert!(!is_allowed_origin(
+        Some("https://cellersistemas.com.br/print"),
         &allowed
     ));
 }

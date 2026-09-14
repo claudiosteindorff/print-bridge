@@ -405,9 +405,65 @@ pub enum ErrorCode {
     InternalError,
 }
 
-/// 检查传入 WebSocket Origin 是否精确匹配允许列表。
+/// 检查传入 WebSocket Origin 是否在允许列表中。
+///
+/// 匹配规则：
+/// 1. Origin 字符串完全一致；或
+/// 2. 同一 scheme/port，且请求 host 等于白名单 host，或为其子域名
+///    （例：白名单 `https://cellersistemas.com.br` 允许
+///    `https://app.cellersistemas.com.br`）。
 pub fn is_allowed_origin(origin: Option<&str>, allowed_origins: &[String]) -> bool {
-    origin.is_some_and(|origin| allowed_origins.iter().any(|allowed| allowed == origin))
+    origin.is_some_and(|origin| {
+        allowed_origins
+            .iter()
+            .any(|allowed| origin_matches_allowed(origin, allowed))
+    })
+}
+
+fn origin_matches_allowed(origin: &str, allowed: &str) -> bool {
+    if origin == allowed {
+        return true;
+    }
+
+    let Ok(origin_url) = Url::parse(origin) else {
+        return false;
+    };
+    let Ok(allowed_url) = Url::parse(allowed) else {
+        return false;
+    };
+
+    if !matches!(origin_url.scheme(), "http" | "https")
+        || !matches!(allowed_url.scheme(), "http" | "https")
+    {
+        return false;
+    }
+    if origin_url.scheme() != allowed_url.scheme() {
+        return false;
+    }
+    if origin_url.port_or_known_default() != allowed_url.port_or_known_default() {
+        return false;
+    }
+
+    let Some(origin_host) = origin_url.host_str() else {
+        return false;
+    };
+    let Some(allowed_host) = allowed_url.host_str() else {
+        return false;
+    };
+
+    host_matches_allowed_host(origin_host, allowed_host)
+}
+
+fn host_matches_allowed_host(origin_host: &str, allowed_host: &str) -> bool {
+    if origin_host.eq_ignore_ascii_case(allowed_host) {
+        return true;
+    }
+
+    let suffix = format!(".{allowed_host}");
+    origin_host.len() > suffix.len()
+        && origin_host
+            .get(origin_host.len() - suffix.len()..)
+            .is_some_and(|tail| tail.eq_ignore_ascii_case(&suffix))
 }
 
 /// 校验并规范化允许的浏览器 Origin 字符串。
@@ -476,8 +532,27 @@ pub fn is_pdf_data_url(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{ErrorCode, JobValidationError, PrintJobInput, SupportedFormat};
+    use super::{
+        is_allowed_origin, ErrorCode, JobValidationError, PrintJobInput, SupportedFormat,
+    };
     use std::str::FromStr;
+
+    #[test]
+    fn is_allowed_origin_allows_registered_apex_and_subdomains() {
+        let allowed = vec!["https://cellersistemas.com.br".to_string()];
+        assert!(is_allowed_origin(
+            Some("https://cellersistemas.com.br"),
+            &allowed
+        ));
+        assert!(is_allowed_origin(
+            Some("https://app.cellersistemas.com.br"),
+            &allowed
+        ));
+        assert!(!is_allowed_origin(
+            Some("https://evilcellersistemas.com.br"),
+            &allowed
+        ));
+    }
 
     #[test]
     fn parses_office_supported_formats() {

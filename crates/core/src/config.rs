@@ -38,7 +38,11 @@ fn default_allowed_ips() -> Vec<String> {
 }
 
 fn default_ui_language() -> UiLanguage {
-    UiLanguage::ZhCn
+    UiLanguage::En
+}
+
+fn default_celler_allowed_origins() -> Vec<String> {
+    vec!["https://cellersistemas.com.br".to_string()]
 }
 
 /// 返回 CLI 使用的配置文件路径。
@@ -195,7 +199,7 @@ impl Default for AgentConfig {
                 port: DEFAULT_PORT,
             },
             security: SecurityConfig {
-                allowed_origins: Vec::new(),
+                allowed_origins: default_celler_allowed_origins(),
                 allowed_ips: default_allowed_ips(),
             },
             printing: PrintingConfig {
@@ -210,8 +214,8 @@ impl Default for AgentConfig {
                 download_timeout_seconds: 30,
             },
             app: AppConfig {
-                autostart: false,
-                language: UiLanguage::ZhCn,
+                autostart: true,
+                language: UiLanguage::En,
             },
             remote: RemoteConfig::default(),
         }
